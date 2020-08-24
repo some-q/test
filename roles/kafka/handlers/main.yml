@@ -1,0 +1,26 @@
+---
+
+- name: Remove unarchive dir
+  file:
+    path: "{{ kafka_install_dir }}/kafka_{{ scala_version }}-{{ kafka_version }}"
+    state: absent
+  when:
+  - ansible_distribution == 'Ubuntu'
+
+- name: restart kafka
+  systemd:
+    name: kafka@{{ item.broker_id }}.service
+    state: restarted
+    daemon_reload: yes
+  with_items:
+    "{{ broker_param }}"
+  when:
+  - ansible_distribution == 'Ubuntu'
+
+- name: restart zookeeper
+  systemd:
+    name: zookeeper-server.service
+    state: restarted
+    daemon_reload: yes
+  when:
+  - ansible_distribution == 'Ubuntu'

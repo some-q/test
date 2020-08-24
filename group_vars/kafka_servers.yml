@@ -1,0 +1,6 @@
+---
+
+kafka_user: "kafka"
+kafka_group: "kafka"
+kafka_user_uid: 1001
+kafka_user_state: "present"

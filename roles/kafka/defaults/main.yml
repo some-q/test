@@ -1,0 +1,15 @@
+---
+
+kafka_download_mirror: http://apache-mirror.rbc.ru/pub/apache/kafka
+kafka_version: 2.3.1
+scala_version: 2.12
+kafka_install_dir: "/usr/lib/"
+kafkalog_dirs: "/var/lib/kafka"
+kafka_logs_dirs: "/var/log/kafka"
+kafka_environment_file: "/etc/default/kafka"
+kafka_etc_dirs: "/etc/kafka"
+
+broker_param:
+- { broker_id: "1001", plaintext_port: "9092", ssl_port: "9093" }
+- { broker_id: "1002", plaintext_port: "9094", ssl_port: "9095" }
+- { broker_id: "1003", plaintext_port: "9096", ssl_port: "9097" }

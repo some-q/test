@@ -1,0 +1,9 @@
+---
+
+- name: Install java
+  apt:
+    name: default-jre
+    state: present
+    update_cache: yes
+  when:
+  - ansible_distribution == 'Ubuntu'

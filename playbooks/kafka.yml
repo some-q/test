@@ -1,0 +1,15 @@
+---
+- name: Prepare kafka
+  hosts: kafka_servers
+  become: true
+  become_user: root
+  roles:
+    - role: user
+      vars:
+        user: "{{ kafka_user }}"
+        group: "{{ kafka_group }}"
+        user_uid: "{{ kafka_user_uid }}"
+        user_comment: "{{ kafka_user_comment }}"
+        user_state: "{{ kafka_user_state }}"
+    - role: java
+    - role: kafka

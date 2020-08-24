@@ -1,0 +1,133 @@
+---
+
+- name: create etc dir
+  file:
+    path: "{{ kafka_etc_dirs }}_{{ item.broker_id }}"
+    state: directory
+    group: "{{ kafka_group }}"
+    owner: "{{ kafka_user }}"
+  with_items:
+    "{{ broker_param }}"
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: Create directory for kafka log files
+  file:
+    path: "{{ kafkalog_dirs }}{{ item.broker_id }}"
+    state: directory
+    group: "{{ kafka_group }}"
+    owner: "{{ kafka_user }}"
+  with_items:
+    "{{ broker_param }}"
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: Create log dir
+  file:
+    path: "{{ kafka_logs_dirs }}{{ item.broker_id }}"
+    state: directory
+    group: "{{ kafka_group }}"
+    owner: "{{ kafka_user }}"
+  with_items:
+    "{{ broker_param }}"
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: Create environment file
+  copy:
+    src: etc/default/kafka
+    dest: "{{ kafka_environment_file }}"
+    owner: root
+    group: root
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: Download and unarchive kafka package
+  unarchive:
+    src: "{{ kafka_download_mirror }}/{{ kafka_version }}/kafka_{{ scala_version }}-{{ kafka_version }}.tgz"
+    dest: "{{ kafka_install_dir }}"
+    remote_src: yes
+    group: "{{ kafka_group }}"
+    owner: "{{ kafka_user }}"
+    creates: "{{ kafka_install_dir }}kafka"
+  register: kafka_unarchive
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: copy to work directory
+  command: "mv {{ kafka_install_dir }}/kafka_{{ scala_version }}-{{ kafka_version }} {{ kafka_install_dir }}/kafka"
+  when:
+  - ansible_distribution == 'Ubuntu'
+  - kafka_unarchive.changed
+
+- name: copy conf folder
+  copy:
+    src: "{{ kafka_install_dir }}/kafka/config"
+    dest: "{{ kafka_etc_dirs }}_{{ item.broker_id }}"
+    remote_src: yes
+    directory_mode: yes
+  with_items:
+    "{{ broker_param }}"
+  notify:
+  - Remove unarchive dir
+  when:
+  - ansible_distribution == 'Ubuntu'
+  - kafka_unarchive.changed
+
+- name: force all notified handlers to run at this point, not waiting for normal sync points
+  meta: flush_handlers
+
+- name: copy zookeeper service file
+  template:
+    src: etc/systemd/system/zookeeper-server.service.j2
+    dest: /etc/systemd/system/zookeeper-server.service
+    owner: root
+    group: root
+  notify:
+  - restart zookeeper
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: copy kafka service file
+  template:
+    src: etc/systemd/system/kafka@.service.j2
+    dest: /etc/systemd/system/kafka@.service
+    owner: root
+    group: root
+  notify:
+  - restart kafka
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: copy kafka config file
+  template:
+    src: etc/kafka/config/server.properties.j2
+    dest: "/etc/kafka_{{ item.broker_id }}/config/server.properties"
+    group: "{{ kafka_group }}"
+    owner: "{{ kafka_user }}"
+  with_items:
+    "{{ broker_param }}"
+  notify:
+  - restart kafka
+  tags:
+  - kafka_config
+  when:
+  - ansible_distribution == "Ubuntu"
+
+- name: start zookeeper
+  systemd:
+    name: zookeeper-server.service
+    state: started
+    enabled: yes
+  when:
+  - ansible_distribution == 'Ubuntu'
+
+- name: start kafka
+  systemd:
+    name: "kafka@{{ item.broker_id }}.service"
+    state: started
+    enabled: yes
+  with_items:
+    "{{ broker_param }}"
+  when:
+  - ansible_distribution == 'Ubuntu'

@@ -1,0 +1,20 @@
+---
+
+- name: Create group
+  group:
+    name: "{{ group }}"
+    state: "{{ user_state|default('absent') }}"
+    gid: "{{ user_uid|default(omit) }}"
+  when:
+  - ansible_distribution == 'Ubuntu'
+  - group is defined
+
+- name: Create user
+  user:
+    name: "{{ user }}"
+    group: "{{ group }}"
+    uid: "{{ user_uid|default(omit) }}"
+    state: "{{ user_state|default('absent') }}"
+    home: "{{ user_home|default(omit) }}"
+  when:
+  - ansible_distribution == 'Ubuntu'
